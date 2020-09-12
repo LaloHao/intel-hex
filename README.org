@@ -1,0 +1,170 @@
+* Intel HEX in Haskell
+  Load =src/Parser.hs=
+
+  You can parse a file like (see appendix for file)
+  #+begin_src haskell
+    λ> parseFile "/home/hao/dev/pic/887/blink.hex"
+    [0000 Extended Linear 0000
+    ,0000 Data 00008A110A1204280B30FE000130FF00
+    ,0010 Data 80308A110A12A0208A110A1283120313
+    ,0020 Data A1007F08A0000D30A2000130A3008312
+    ,0030 Data 03132008A4002108A500FF30A007031C
+    ,0040 Data A1032508240403199C2804302207A400
+    ,0050 Data A501A50D2308A5072408FE002508FF00
+    ,0060 Data 80308A110A12A0208A110A1283120313
+    ,0070 Data A7007F08A6002208FE002308FF008030
+    ,0080 Data 8A110A12A0208A110A1283120313A900
+    ,0090 Data A5007F08A400A80002302207A400A501
+    ,00A0 Data A50D2308A5072408FE002508FF008030
+    ,00B0 Data 8A110A12A0208A110A1283120313A500
+    ,00C0 Data AB007F08AA00A400831203132608AA00
+    ,00D0 Data 2708AB00FF30A607031CA7032B082A04
+    ,00E0 Data 031995282808FE002908FF0080308A11
+    ,00F0 Data 0A12C1208A110A1283120313AA002408
+    ,0100 Data 83120313840083138312031325188317
+    ,0110 Data 2A0883120313800083120313A80A0319
+    ,0120 Data A90AA40A0319A50A6428063083120313
+    ,0130 Data A2070318A30A17288A110A12D4280800
+    ,0140 Data 003A0319A828803A0319B228FF010034
+    ,0150 Data 7E08840083137F1883170008FF00840A
+    ,0160 Data 000808008A110A12CF20FD00FE0FFF03
+    ,0170 Data FF0A8A110A12CF20FC007D08FF007C08
+    ,0180 Data 0800003A0319C828803A0319CF280034
+    ,0190 Data 7E08840083137F188317000808007F08
+    ,01A0 Data 8A007E08820008008316031307108312
+    ,01B0 Data 031307108312031307143030FF007530
+    ,01C0 Data 8A110A12F2208A110A12831203130710
+    ,01D0 Data 3030FF0075308A110A12F2208A110A12
+    ,01E0 Data DA28080083120313AD007F08AC00AE01
+    ,01F0 Data AF01831203132D082F02031D01292C08
+    ,0200 Data 2E0203180A29000083120313AE0A0319
+    ,0210 Data AF0AF928080001340034133401343034
+    ,0220 Data 0034013400340034
+    ,400E Data F42F
+    ,0000 EOF
+    ]
+  #+end_src
+
+  Parse a single record (not new line ending, for that use =line=) with
+  #+begin_src haskell
+    λ> parse record ":1000000000008A110A1204280B30FE000130FF00A4"
+    Right 0000 Data 00008A110A1204280B30FE000130FF00
+  #+end_src
+
+  It should fail to parse if the checksum fails (see last 2 digits difference compared to the above record)
+  #+begin_src haskell
+    λ> parse record ":1000000000008A110A1204280B30FE000130FF00A0"
+    Left (line 1, column 42):
+    unexpected "0"
+    expecting "A4"
+  #+end_src
+** Points that needs review [0/4]
+*** TODO Library name
+    I have no idea what to name this, for now i expect the scope of this project
+    to handle reading/parsing, and generating Intel HEX files.
+*** TODO File organization
+    As above, so below, need to find a better way to organize the structure,
+    will review more Haskell projects.
+*** TODO Instruction parsing
+    Intruction, probably handled better in another project, still thinking how to
+    handle the data types, i intended to be able to pass the same structure showed
+    in the datasheet about the operands to be able to infer any random instruction
+    if there are that many variations from PIC to PIC.
+    #+begin_src haskell
+      λ> parse instruction "000111dfffffff"
+      Right [I,I,I,I,I,I,D,F,F,F,F,F,F,F]
+      λ> parse instruction "000111dffffff f"
+      Left (line 1, column 14):
+      unexpected " "
+      expecting "f", "d", "b", "x", "k", "1" or "0"
+    #+end_src
+
+    See =src/Instructions.hs= for an example of instructions that need to be
+    parsed, mainly for the =pic16f887=.
+*** TODO Tests
+    Need to review QuickCheck
+** Appendix
+*** blink.hex
+    #+begin_src fundamental
+      :020000040000FA
+      :1000000000008A110A1204280B30FE000130FF00A4
+      :1000100080308A110A12A0208A110A128312031357
+      :10002000A1007F08A0000D30A2000130A3008312C0
+      :1000300003132008A4002108A500FF30A007031C1B
+      :10004000A1032508240403199C2804302207A400D6
+      :10005000A501A50D2308A5072408FE002508FF001B
+      :1000600080308A110A12A0208A110A128312031307
+      :10007000A7007F08A6002208FE002308FF008030AA
+      :100080008A110A12A0208A110A1283120313A900EE
+      :10009000A5007F08A400A80002302207A400A50143
+      :1000A000A50D2308A5072408FE002508FF008030C1
+      :1000B0008A110A12A0208A110A1283120313A500C2
+      :1000C000AB007F08AA00A400831203132608AA002D
+      :1000D0002708AB00FF30A607031CA7032B082A0440
+      :1000E000031995282808FE002908FF0080308A118E
+      :1000F0000A12C1208A110A1283120313AA002408CB
+      :1001000083120313840083138312031325188317A8
+      :100110002A0883120313800083120313A80A031909
+      :10012000A90AA40A0319A50A642806308312031336
+      :10013000A2070318A30A17288A110A12D428080054
+      :10014000003A0319A828803A0319B228FF010034A5
+      :100150007E08840083137F1883170008FF00840A39
+      :10016000000808008A110A12CF20FD00FE0FFF03CD
+      :10017000FF0A8A110A12CF20FC007D08FF007C08CC
+      :100180000800003A0319C828803A0319CF28003420
+      :100190007E08840083137F188317000808007F08F7
+      :1001A0008A007E088200080083160313071083125A
+      :1001B000031307108312031307143030FF00753048
+      :1001C0008A110A12F2208A110A12831203130710ED
+      :1001D0003030FF0075308A110A12F2208A110A129B
+      :1001E000DA28080083120313AD007F08AC00AE01CB
+      :1001F000AF01831203132D082F02031D01292C08C0
+      :100200002E0203180A29000083120313AE0A0319F1
+      :10021000AF0AF928080001340034133401343034B3
+      :08022000003401340034003405
+      :02400E00F42F8D
+      :00000001FF
+    #+end_src
+*** Running without anything but nix
+    Install [[https://github.com/NixOS/nix][nix]] and then in this folder run:
+    #+begin_src shell
+      [hao@wendy:~/dev/asm/compiler]$ nix-shell
+
+      [nix-shell:~/dev/asm/compiler]$
+    #+end_src
+
+    It should load =default.nix=, be sure to be in (this project's) root folder.
+
+    Then you can test interactively anything mentioned above:
+    #+begin_src shell
+      [nix-shell:~/dev/asm/compiler]$ cd src/
+
+      [nix-shell:~/dev/asm/compiler/src]$ ghci Parser.hs
+      GHCi, version 8.8.4: https://www.haskell.org/ghc/  :? for help
+      [1 of 4] Compiling Util             ( Util.hs, interpreted )
+      [2 of 4] Compiling Number           ( Number.hs, interpreted )
+
+      Number.hs:48:10: warning: [-Wmissing-methods]
+      • No explicit implementation for
+      either ‘==’ or ‘/=’
+      • In the instance declaration for ‘Eq Hexadecimal’
+             |
+             48 | instance Eq Hexadecimal
+             |          ^^^^^^^^^^^^^^
+
+             Number.hs:49:10: warning: [-Wmissing-methods]
+             • No explicit implementation for
+             either ‘compare’ or ‘<=’
+             • In the instance declaration for ‘Ord Hexadecimal’
+             |
+             49 | instance Ord Hexadecimal
+             |          ^^^^^^^^^^^^^^^
+             [3 of 4] Compiling Types            ( Types.hs, interpreted )
+             [4 of 4] Compiling Parser           ( Parser.hs, interpreted )
+             Ok, four modules loaded.
+      ,*Parser> parseFile "/home/hao/dev/pic/887/blink.hex"
+      [0000 Extended Linear 0000
+       ,0000 Data 00008A110A1204280B30FE000130FF00
+       ...
+       ...
+    #+end_src
